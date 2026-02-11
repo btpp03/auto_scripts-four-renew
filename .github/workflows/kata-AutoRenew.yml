@@ -127,6 +127,7 @@ jobs:
           else
             TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
             git commit -m "⏱️ 更新 katabump 时间文件: $TIMESTAMP"
-            git push origin HEAD:main
+            git fetch origin main
+            git push -f origin HEAD:main
             echo "✅ 更改已推送"
           fi

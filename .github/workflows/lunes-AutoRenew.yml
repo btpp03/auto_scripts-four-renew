@@ -88,10 +88,7 @@ jobs:
       - name: 🚀 执行 ${{ env.SCRIPT_DESC }}
         env:
           ACCOUNTS_BATCH: ${{ secrets.LUNES_ACCOUNTS_BATCH }}
-
-          #以下2个不要动，不会请不要碰
-          OUTPUT_DIR: ./
-          SCREENSHOT_DIR: ./screenshots
+          SCREENSHOT_DIR: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}/screenshots
         run: xvfb-run -a python ${{ env.SCRIPT_NAME }}
         working-directory: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
 
@@ -131,6 +128,7 @@ jobs:
           else
             TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
             git commit -m "⏱️ 更新 lunes 时间文件: $TIMESTAMP"
-            git push origin HEAD:main
+            git fetch origin main
+            git push -f origin HEAD:main
             echo "✅ 更改已推送"
           fi
