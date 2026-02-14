@@ -2,8 +2,9 @@ name: 🔄 WeirdHost Auto Renew
 
 on:
   schedule:
-    # 每天 UTC 时间 3:01（北京时间 11:01）
-    - cron: '1 3 * * *'
+   # 北京时间 11:10 对应 UTC 03:10
+    # 格式顺序为：分 时 天 月 周
+    - cron: "10 3 * * *"
   workflow_dispatch:
 
 permissions:
