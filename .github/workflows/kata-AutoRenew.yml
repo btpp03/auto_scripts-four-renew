@@ -1,13 +1,9 @@
 name: 🔄 KataBump Auto Renew
 
 on:
-  # 手动触发
-  workflow_dispatch:
-  
-  # 定时触发
+  workflow_dispatch: # 手动触发
   schedule:
     # 北京时间 10:23 对应 UTC 02:23
-    # 格式为: "分 时 天 月 周"
     - cron: "23 2 * * *"
 
 # 权限配置：允许提交和推送更改
@@ -19,29 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      PROJECT_DIR: katabump
+      PROJECT_DIR: katabump_code
       SCRIPT_NAME: kataBump_renew_batch.py
       SCRIPT_DESC: KataBump 续期脚本
-    
+
     steps:
-      # 步骤 1: 检出公开仓库
+      # 步骤 1: 检出当前公开仓库
       - name: 📥 检出公开仓库
         uses: actions/checkout@v4
-      
-      # 步骤 1.5: 创建输出目录
-      - name: 📁 创建输出目录
-        run: mkdir -p ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
-        working-directory: .
-      
-      # 步骤 2: 检出私有仓库
+
+      # 步骤 2: 检出私有仓库 (放置在指定的 PROJECT_DIR 目录下)
       - name: 🔐 检出私有仓库
         uses: actions/checkout@v4
         with:
           repository: jyucoeng/auto_kataBump_private
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
-          path: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
-          fetch-depth: 1
+          path: ${{ env.PROJECT_DIR }}
+          persist-credentials: true
 
       # 步骤 3: 设置 Python 环境
       - name: 🐍 设置 Python 3.10
@@ -49,7 +40,7 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
-          cache-dependency-path: "**/requirements.txt"
+          cache-dependency-path: "${{ env.PROJECT_DIR }}/requirements.txt"
 
       # 步骤 4: 安装系统依赖
       - name: 📦 安装系统依赖
@@ -65,15 +56,15 @@ jobs:
           else
             echo "⚠️ 未找到 requirements.txt，跳过依赖安装"
           fi
-        working-directory: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
+        working-directory: ${{ env.PROJECT_DIR }}
 
       # 步骤 5.5: 安装 Playwright 浏览器
       - name: 🌐 安装 Playwright 浏览器
         run: |
           python -m playwright install chromium
-        working-directory: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
+        working-directory: ${{ env.PROJECT_DIR }}
 
-      # 步骤 6: 添加随机延迟
+      # 步骤 6: 添加随机延迟 (防止并发检测)
       - name: ⏳ 添加随机延迟
         run: |
           delay=$((RANDOM % 120))
@@ -84,46 +75,44 @@ jobs:
       - name: 🚀 执行 ${{ env.SCRIPT_DESC }}
         env:
           KATABUMP_BATCH: ${{ secrets.KATABUMP_ACCOUNTS_BATCH }}
-        run: xvfb-run -a python ${{ env.SCRIPT_NAME }}
-        working-directory: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}
+        run: |
+          xvfb-run -a python ${{ env.SCRIPT_NAME }}
+        working-directory: ${{ env.PROJECT_DIR }}
 
-      # 步骤 8: 上传截图到 artifacts，7天内可下载压缩包
-      - name: 📸 上传截图到 artifacts
+      # 步骤 8: 上传截图 (用于排查错误)
+      - name: 📸 上传截图到 Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: katabump-screenshots
-          path: ${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}/screenshots
+          path: ${{ env.PROJECT_DIR }}/screenshots
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 9: 清理原始截图文件
-      - name: 🧹 清理原始截图文件
+      # 步骤 10: 提交更新时间到当前公开仓库
+      - name: 🕒 提交更新时间到公开库
         if: always()
-        run: |
-          OUTPUT_DIR="${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ env.PROJECT_DIR }}"
-          if [ -d "$OUTPUT_DIR/screenshots" ]; then
-            echo "🧹 清理截图文件..."
-            rm -f "$OUTPUT_DIR/screenshots"/*.png
-            echo "✅ 截图文件已清理"
-          else
-            echo "⚠️ 截图目录不存在，无需清理"
-          fi
-
-      # 步骤 10: 提交时间文件到公开库
-      - name: ⏱️ 提交时间文件
-        if: always()
+        env:
+          # 使用 Token 确保推送权限
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p katabump && echo "$(date +'%Y-%m-%d %H:%M:%S')" > katabump/time.txt
-          git add katabump/time.txt 2>/dev/null || true
+          
+          # 确保回到公开仓库根目录
+          cd $GITHUB_WORKSPACE
+          
+          mkdir -p katabump
+          TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
+          echo "$TIMESTAMP" > katabump/time.txt
+          
+          git add katabump/time.txt
           if git diff --cached --quiet; then
             echo "无变化，无需提交"
           else
-            TIMESTAMP=$(date +'%Y-%m-%d %H:%M:%S')
-            git commit -m "⏱️ 更新 katabump 时间文件: $TIMESTAMP"
-            git fetch origin main
-            git push -f origin HEAD:main
+            git commit -m "🕒 更新 katabump 时间文件: $TIMESTAMP"
+            # 使用包含 Token 的远程地址进行推送，彻底解决认证问题
+            git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+            git push origin HEAD:main
             echo "✅ 更改已推送"
           fi
