@@ -25,7 +25,7 @@ jobs:
       # ✅              Secrets 配置开始                         
       # ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅
       
-      HY2_PROXY_URL: ${{ secrets.JUST_HY2_PROXY_URL }}                # 代理 URL（可选，如果要改用不一样的代理,你就改这个secrets后面跟着的变量名字，❌最前面那个变量名字千万不能改）
+      HY2_PROXY_URL: ${{ secrets.JUST_HY2_PROXY_URL }}                # 代理 URL（可选，如果要改用不一样的代理,你就改这个secrets后面跟着的变量名字，❌冒号最前面那个变量名字千万不能改）
       PRIVATE_REPO_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}          # 私有仓库访问令牌（必须）
       JUST_BATCH: ${{ secrets.JUST_BATCH }}                          # 账户信息（必须）格式: email,passwd,tg_token,tg_chat_id（每行一个账号,回车换行后可填第二个账号）
       SOCKS_PORT: ${{ secrets.SOCKS_PORT || '51080' }}              # SOCKS 端口（可选，默认 51080）
