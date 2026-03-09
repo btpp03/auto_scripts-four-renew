@@ -1,8 +1,5 @@
-Runner repo: jyucoeng/auto_scripts | Run ID: 22837451980 | UTC: 2026-03-09 03:47:33
+Runner repo: btpp03/auto_scripts-four-renew | Run ID: 22837990069 | UTC: 2026-03-09 04:11:21
 
-**最后运行时间**: `2026-03-09 11:47:22`
+# XServer 续期报告
 
-**运行结果**: <br>
-🖥️服务器:`🇯🇵Xserver(MC)`<br>
-📊续期结果:ℹ️Unexpired<br>
-🕛️旧到期时间: `2026-03-11`<br>
+脚本未生成报告文件
